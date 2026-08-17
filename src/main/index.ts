@@ -3090,6 +3090,25 @@ ipcMain.handle('hive:setArchived', (_evt, id: unknown, archived: unknown) => {
   return { ok: true };
 });
 
+// ─── IPC: Cowork board (Supabase ZAOcowork tasks, Phase 2) ─────────────────
+ipcMain.handle('cowork:getTasks', async () => {
+  try {
+    const { getCoworkTasks } = await import('./supabase');
+    return await getCoworkTasks();
+  } catch (e) {
+    console.error('Error fetching cowork tasks:', e);
+    return [];
+  }
+});
+ipcMain.handle('cowork:isConfigured', async () => {
+  try {
+    const { isSupabaseConfigured } = await import('./supabase');
+    return isSupabaseConfigured();
+  } catch {
+    return false;
+  }
+});
+
 // ─── IPC: semantic memory (MemPalace CLI) ───────────────────────────────────
 ipcMain.handle('hive:memoryStatus', () => { memory.resetBinCache(); return memory.status(); });
 ipcMain.handle('hive:searchMemory', (_evt, query: unknown, wing: unknown) => {

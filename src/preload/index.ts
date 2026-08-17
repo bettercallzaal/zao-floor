@@ -966,6 +966,15 @@ const api = {
   hiveWriteTasks: (tasks: HiveTask[]): Promise<{ ok: boolean; error?: string }> =>
     ipcRenderer.invoke('hive:writeTasks', tasks),
 
+  // ─── Cowork board (Supabase ZAOcowork tasks) ──────────────────────────────
+  /** Fetch open tasks from ZAOcowork Supabase table. Phase 2: read-only.
+   *  Returns empty array if Supabase is not configured or on any error. */
+  getCoworkTasks: (): Promise<unknown[]> =>
+    ipcRenderer.invoke('cowork:getTasks'),
+  /** Check if Supabase is properly configured (for UI fallback). */
+  isCoworkConfigured: (): Promise<boolean> =>
+    ipcRenderer.invoke('cowork:isConfigured'),
+
   // ─── Scheduled missions (recurring auto-dispatch) ──────────────────────────
   listMissions: (): Promise<ScheduledMission[]> => ipcRenderer.invoke('missions:list'),
   saveMissions: (missions: ScheduledMission[]): Promise<{ ok: boolean }> =>
@@ -1256,6 +1265,17 @@ const api = {
    *  contents as a backup and refuses a first write that would empty a full file. */
   rosterWrite: (snap: RosterSnapshot): Promise<{ ok: boolean; skipped?: string; error?: string }> =>
     ipcRenderer.invoke('roster:write', snap),
+
+  // ─── Fleet Mirror (real tmux lanes on the floor) ──────────────────────────
+  /** Get the state of all ZAO floor lanes (WORKING/WAITING/IDLE/DEAD).
+   *  Reads from tmux sessions + zao-cc-state.sh. Gracefully degrades if
+   *  tmux or zao-cc-state.sh is absent. */
+  fleetGetState: (): Promise<{ ok: boolean; lanes?: Array<{ name: string; status: 'WORKING' | 'WAITING' | 'IDLE' | 'DEAD' }>; error?: string }> =>
+    ipcRenderer.invoke('fleet:getState'),
+  /** Get the recent pane output for a tmux lane (read-only). Used when clicking
+   *  a lane character to show its recent tmux pane output. */
+  fleetGetLaneOutput: (laneName: string): Promise<{ ok: boolean; output?: string; error?: string }> =>
+    ipcRenderer.invoke('fleet:getLaneOutput', laneName),
 
   // ─── Auto-update (v0.3.4; full state model v0.3.7) ──────────────────────────
   /** Push channel from main's updater — every stage of the pipeline, so the
