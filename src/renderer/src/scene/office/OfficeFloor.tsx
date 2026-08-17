@@ -1654,6 +1654,26 @@ export function OfficeFloor() {
       };
       app.ticker.add(onTick);
 
+      // ─── Fleet Mirror: fetch real tmux lane state (Phase 3) ──────────────────
+      // Poll the real ZAO floor lanes and display their state (WORKING/WAITING/IDLE/DEAD).
+      // Gracefully degrades if tmux or zao-cc-state.sh is absent.
+      let fleetPollTimer: ReturnType<typeof setInterval> | null = null;
+      const pollFleetState = async () => {
+        if (mountIdRef.current !== mountId) return;
+        try {
+          const result = await window.cth.fleetGetState();
+          if (result.ok && result.lanes) {
+            useStore.getState().setFleetLanes(result.lanes);
+          }
+        } catch (err) {
+          console.debug('[fleet] poll error:', err);
+        }
+      };
+      // Poll every 5 seconds for real-time state updates
+      void pollFleetState();
+      fleetPollTimer = setInterval(() => pollFleetState(), 5000);
+      (app as any).__fleetPoll = fleetPollTimer;
+
       const resize = new ResizeObserver((entries) => {
         for (const e of entries) {
           const { width, height } = e.contentRect;
@@ -1686,6 +1706,7 @@ export function OfficeFloor() {
         try { (a as any).__unsub?.(); } catch { /* noop */ }
         try { (a as any).__offMessage?.(); } catch { /* noop */ }
         try { clearInterval((a as any).__taskBoardPoll); } catch { /* noop */ }
+        try { clearInterval((a as any).__fleetPoll); } catch { /* noop */ }
         safeDestroy(a);
       }
       appRef.current = null;
