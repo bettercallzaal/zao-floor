@@ -1277,6 +1277,12 @@ const api = {
   fleetGetLaneOutput: (laneName: string): Promise<{ ok: boolean; output?: string; error?: string }> =>
     ipcRenderer.invoke('fleet:getLaneOutput', laneName),
 
+  // ─── Phase 4: Rules loading for ZAOOS agents ──────────────────────────────
+  /** Load ZAO discipline rules (.claude/rules/*.md) for agents running in ZAOOS project.
+   *  Returns a map of filename → content, empty when not ZAOOS or rules unavailable. */
+  loadRules: (cwd: string): Promise<Record<string, string>> =>
+    ipcRenderer.invoke('rules:load', cwd),
+
   // ─── Auto-update (v0.3.4; full state model v0.3.7) ──────────────────────────
   /** Push channel from main's updater — every stage of the pipeline, so the
    *  toolbar badge can show "checking", download progress, and the staged

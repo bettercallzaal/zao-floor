@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PixelPanel } from './PixelPanel';
 import { PixelBadge } from './PixelBadge';
 import { PixelButton } from './PixelButton';
@@ -31,6 +31,21 @@ export function AgentDetailPanel({ agent }: AgentDetailPanelProps) {
   const sidebarTab = useStore(s => s.sidebarTab);
   const setSidebarTab = useStore(s => s.setSidebarTab);
   const isReal = !!agent.ptyId;
+
+  // Phase 4: Load ZAO discipline rules when agent mounts or cwd changes
+  useEffect(() => {
+    void (async () => {
+      try {
+        const rules = await window.cth.loadRules(agent.cwd);
+        if (Object.keys(rules).length > 0) {
+          updateAgent(agent.id, { loadedRules: rules });
+        }
+      } catch {
+        /* rules loading failed, continue without them */
+      }
+    })();
+  }, [agent.cwd, agent.id, updateAgent]);
+
   // While this agent is shown in the fullscreen overlay, the fullscreen view
   // owns the pty (it sizes it to fill the screen). Keeping the embedded terminal
   // mounted too means two xterms fight over the pty's cols/rows — which corrupts
