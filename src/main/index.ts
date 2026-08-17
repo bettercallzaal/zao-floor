@@ -23,6 +23,7 @@ import {
   getLogGraph, getCommitFiles, getFileAtRev, compareRefs, listWorktrees, checkoutRef
 } from './git';
 import { HiveManager, type AgentMeta, type HiveMessage, type HiveTask } from './hive';
+import { getFleetState, getLanePaneOutput, type LaneState } from './fleet';
 import { HookServer } from './hooks';
 import { CircuitBreaker, type BreakerInput } from './breaker';
 import type { UsageProvider } from './usage';
@@ -3148,6 +3149,32 @@ ipcMain.handle('kg:addFiles', async (evt) => {
     }
   });
   return { ok: true as const, results };
+});
+
+// ─── IPC: Fleet Mirror (real tmux lanes) ────────────────────────────────────
+// Phase 3: Get the state of real ZAO floor lanes (WORKING/WAITING/IDLE/DEAD),
+// sourced from tmux sessions + zao-cc-state.sh. Gracefully degrades if tmux
+// or zao-cc-state.sh is absent (shows DEAD lanes, no crash).
+ipcMain.handle('fleet:getState', async () => {
+  try {
+    return { ok: true as const, lanes: await getFleetState() };
+  } catch (e) {
+    console.error('[fleet] getState error:', e);
+    return { ok: false as const, error: e instanceof Error ? e.message : String(e) };
+  }
+});
+
+// Fetch the recent pane output for a given tmux lane (read-only terminal view).
+// Used when clicking a lane character to show its recent output.
+ipcMain.handle('fleet:getLaneOutput', async (_evt, laneName: unknown) => {
+  if (typeof laneName !== 'string') return { ok: false as const, error: 'invalid lane name' };
+  try {
+    const output = await getLanePaneOutput(laneName as any);
+    return { ok: true as const, output };
+  } catch (e) {
+    console.error(`[fleet] getLaneOutput(${laneName}) error:`, e);
+    return { ok: false as const, error: e instanceof Error ? e.message : String(e) };
+  }
 });
 
 // ─── IPC: composer attachments (images + arbitrary files, attached by PATH) ──
