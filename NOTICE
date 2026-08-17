@@ -1,0 +1,8 @@
+zao-floor is a fork of munder-difflin
+https://github.com/chaitanyagiri/munder-difflin
+Copyright (c) 2026 Chaitanya Giri, MIT License (see LICENSE)
+
+Forked 2026-08-17 by The ZAO (bettercallzaal) to retheme and rewire the
+harness for the ZAO ecosystem: ZAO branding, ZAOcowork board integration,
+tmux fleet mirroring, and ZAO agent rules wiring. Upstream code and design
+remain credited to the original author.
