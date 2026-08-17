@@ -113,7 +113,7 @@ export function App() {
       useStore.getState().setOrgTrigger(withTriggers.orgTrigger ?? DEFAULT_ORG_TRIGGER);
     });
     // Mirror BYOK OpenAI key presence (boolean only; the key never leaves main) so the
-    // Realtime Michael voice toggle can gate on it. Lives in the secret broker, not
+    // Realtime ZOE voice toggle can gate on it. Lives in the secret broker, not
     // config — so fetch it rather than derive from c.
     window.cth.realtimeHasOpenAiKey().then(has => {
       if (!cancelled) useStore.getState().setHasOpenAiKey(has);
@@ -129,7 +129,7 @@ export function App() {
   // Quit warning subscription
   useEffect(() => window.cth.onCloseRequested((info) => setQuitWarn(info)), []);
 
-  // Shareable hires: a validated manifest arriving via the munderdifflin://
+  // Shareable hires: a validated manifest arriving via the zao-floor://
   // deep link (or file import) pre-fills the Add-Agent modal. Never spawns by itself.
   const setPendingHire = useStore(s => s.setPendingHire);
   useEffect(() => {
@@ -171,7 +171,7 @@ export function App() {
 
   // The hive: god-agent bootstrap, hook-driven avatars, idle-agent waking. Held
   // off until the user opens a hive in the launch picker (passing null no-ops the
-  // hook) so Michael doesn't boot against the current home while the user may be
+  // hook) so ZOE doesn't boot against the current home while the user may be
   // about to switch to a different one.
   useHive(hiveOpened ? config : null);
 
@@ -186,7 +186,7 @@ export function App() {
   // hive (it would fire fake envelope handoffs and step seeded agents). Run it
   // only as an explicit showcase (VITE_CTH_DEMO=1 in dev) or on a genuinely
   // empty floor, and stop it the instant the first real PTY agent appears
-  // (Michael always spawns, so in normal operation it effectively never runs).
+  // (ZOE always spawns, so in normal operation it effectively never runs).
   useEffect(() => {
     if (!config?.onboardingComplete) return;
     const DEMO = import.meta.env.DEV && import.meta.env.VITE_CTH_DEMO === '1';
@@ -242,7 +242,7 @@ export function App() {
       width: '100vw', height: '100vh',
       overflow: 'hidden'
     }}>
-      {/* rt-12: global fixed-overlay toast for voice-Michael completions ("Oscar
+      {/* rt-12: global fixed-overlay toast for voice-ZOE completions ("task
           finished X"). Self-positions bottom-right; renders null until one arrives. */}
       <CompletionToast />
       {/* v0.3.4: background-update toast ("restart to update"); renders null until
@@ -265,7 +265,7 @@ export function App() {
       >
         <img
           src={brandLogo}
-          alt="Munder Difflin"
+          alt="ZAO Floor"
           style={{ height: 20, width: 'auto', display: 'block' }}
         />
         {/* v0.3.7: the version is no longer inert text — it doubles as the
@@ -405,8 +405,8 @@ export function App() {
                 color: 'var(--cth-ink-500)'
               }}>WAKING THE FLOOR</div>
               <p style={{ margin: 0, fontSize: 13, textAlign: 'center', color: 'var(--cth-ink-700)' }}>
-                Michael is clocking in.<br />
-                The terminal will land here once he's seated.
+                ZOE is clocking in.<br />
+                The terminal will land here once she is seated.
               </p>
             </PixelPanel>
           ) : (

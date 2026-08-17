@@ -1,42 +1,39 @@
 /* Design tokens — mirrors tokens.ts. Update both together. */
 :root {
-  /* Base */
-  --cth-cream-50:  #FFFDF5;
-  --cth-cream-100: #FFF8E7;
-  --cth-cream-200: #F4E9C7;
-  --cth-cream-300: #E8D9A0;
-  --cth-paper-100: #FCFAF0;
-  --cth-paper-200: #F0EAD2;
+  /* Base — ZAO navy and neutrals */
+  --cth-cream-50:  #0f1420;
+  --cth-cream-100: #0a1628;
+  --cth-cream-200: #121c31;
+  --cth-cream-300: #1a263f;
+  --cth-paper-100: #0d1524;
+  --cth-paper-200: #151e35;
 
-  /* Ink */
-  --cth-ink-900: #1A1320;
-  --cth-ink-700: #3D2E4A;
-  --cth-ink-500: #6B5878;
-  --cth-ink-300: #A899B5;
-  --cth-ink-100: #D9CFE0;
+  /* Ink — light text for dark navy background */
+  --cth-ink-900: #e8e6e3;
+  --cth-ink-700: #c3c0bc;
+  --cth-ink-500: #8f8c90;
+  --cth-ink-300: #4e4d55;
+  --cth-ink-100: #313037;
 
-  /* Accents — v0.3.4 recalibration: same hues, professional saturation.
-     The originals (#FFD93D, #FF6B6B, …) were full-saturation arcade tones that
-     read as noise at UI density; these sit in the calmer band that products
-     like Linear/Radix use — recognizable color, no glare. */
-  --cth-coral: #D96A62;       --cth-coral-light: #F3D3CD;
-  --cth-mint:  #5CA97A;       --cth-mint-light:  #D2E7DA;
-  --cth-sky:   #4F9FAF;       --cth-sky-light:   #CFE5E9;
-  --cth-lemon: #DCAB3C;       --cth-lemon-light: #F3E4BC;
-  --cth-lilac: #9482D3;       --cth-lilac-light: #E0DAF2;
-  --cth-peach: #D99168;       --cth-peach-light: #F3DACA;
+  /* Accents — ZAO gold primary, adjusted for dark background */
+  --cth-coral: #DF8078;       --cth-coral-light: #46302E;
+  --cth-mint:  #6FB88B;       --cth-mint-light:  #2A3930;
+  --cth-sky:   #64ACBB;       --cth-sky-light:   #273A3E;
+  --cth-lemon: #f5a623;       --cth-lemon-light: #3D3524;
+  --cth-lilac: #A493E0;       --cth-lilac-light: #332F45;
+  --cth-peach: #DFA07A;       --cth-peach-light: #3F3029;
 
-  /* Status — same recalibration; hue meanings unchanged */
-  --cth-status-idle:     #A199AB;
-  --cth-status-thinking: #4F9FAF;
-  --cth-status-working:  #DCAB3C;
-  --cth-status-waiting:  #6D87D6;
-  --cth-status-blocked:  #D96A62;
-  --cth-status-success:  #5CA97A;
-  --cth-status-ghost:    #D9D3DE;
-  --cth-status-compacting: #8F7CC7; /* #5C — mid-/compact, "boxing up context" */
-  --cth-status-looping:    #D6903F; /* #5C — circuit-breaker armed (runaway) */
-  --cth-status-typing:     #C89838; /* unsent text on the prompt — queue is held */
+  /* Status — dark-tuned for ZAO navy background */
+  --cth-status-idle:     #6F6C77;
+  --cth-status-thinking: #64ACBB;
+  --cth-status-working:  #f5a623;
+  --cth-status-waiting:  #8095DC;
+  --cth-status-blocked:  #DF8078;
+  --cth-status-success:  #6FB88B;
+  --cth-status-ghost:    #3D3C44;
+  --cth-status-compacting: #9D8BD2;
+  --cth-status-looping:    #D69A55;
+  --cth-status-typing:     #CBA24A;
 
   /* Spacing */
   --cth-space-0: 0px;
@@ -76,8 +73,8 @@
   --cth-lh-body-sm:    18px;
   --cth-lh-mono:       20px;
 
-  /* Hard drop shadow — no blur, softer than before */
-  --cth-shadow-hard: 3px 3px 0 rgba(26, 19, 32, 0.14);
+  /* Hard drop shadow — adjusted for dark navy background */
+  --cth-shadow-hard: 3px 3px 0 rgba(0, 0, 0, 0.45);
 
   /* Panel borders — v0.3.4: single hairlines. The old three-layer package
      boxed every surface in thick chrome; structure now comes from surface

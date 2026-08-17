@@ -2,10 +2,8 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
-/* The app is a fixed cream/light design. Without declaring it, Chromium on a
-   dark-mode OS styles form controls with the DARK UA scheme — most visibly a
-   white (invisible) text caret on our cream textareas. */
-:root { color-scheme: light; }
+/* The app uses a dark navy theme. Declare dark color-scheme so the OS respects it. */
+:root { color-scheme: dark; }
 
 html, body, #root {
   margin: 0;
@@ -19,11 +17,11 @@ html, body, #root {
 }
 
 body {
-  /* tiny diagonal cream noise — pure CSS, no images */
+  /* subtle diagonal noise on dark navy — pure CSS, no images */
   background-image:
     repeating-linear-gradient(
       45deg,
-      rgba(232, 217, 160, 0.20) 0 1px,
+      rgba(10, 22, 40, 0.40) 0 1px,
       transparent 1px 6px
     );
 }
