@@ -200,8 +200,70 @@ export function AgentDetailPanel({ agent }: AgentDetailPanelProps) {
         {sidebarTab === 'traces' && (
           <ToolWaterfall agentId={agent.id} />
         )}
+
+        {sidebarTab === 'rules' && (
+          <RulesTab agent={agent} />
+        )}
       </div>
     </PixelPanel>
+  );
+}
+
+function RulesTab({ agent }: { agent: Agent }) {
+  const rules = agent.loadedRules || {};
+  const rulesList = Object.entries(rules);
+
+  if (rulesList.length === 0) {
+    return (
+      <EmptyTab title="No Rules">
+        This agent does not have ZAO discipline rules loaded. Rules are loaded for agents running in the ZAOOS project.
+      </EmptyTab>
+    );
+  }
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      background: 'var(--cth-paper-200)',
+      overflow: 'hidden'
+    }}>
+      <div style={{
+        flex: 1, overflow: 'auto', padding: 12, gap: 8,
+        display: 'flex', flexDirection: 'column'
+      }}>
+        {rulesList.map(([filename, content]) => (
+          <div key={filename} style={{
+            background: 'var(--cth-cream-100)',
+            border: '1px solid var(--cth-ink-300)',
+            padding: 8,
+            borderRadius: 2
+          }}>
+            <div style={{
+              fontFamily: 'var(--cth-font-display)',
+              fontSize: 10,
+              lineHeight: '14px',
+              color: 'var(--cth-ink-900)',
+              marginBottom: 6,
+              fontWeight: 600
+            }}>
+              {filename}
+            </div>
+            <div style={{
+              fontSize: 11,
+              lineHeight: '1.4',
+              color: 'var(--cth-ink-700)',
+              fontFamily: 'monospace',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              maxHeight: 150,
+              overflow: 'auto'
+            }}>
+              {content.slice(0, 500)}{content.length > 500 ? ' ...' : ''}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

@@ -23,6 +23,7 @@ import {
   getLogGraph, getCommitFiles, getFileAtRev, compareRefs, listWorktrees, checkoutRef
 } from './git';
 import { HiveManager, type AgentMeta, type HiveMessage, type HiveTask } from './hive';
+import { getFleetState, getLanePaneOutput, type LaneState } from './fleet';
 import { HookServer } from './hooks';
 import { CircuitBreaker, type BreakerInput } from './breaker';
 import type { UsageProvider } from './usage';
@@ -2708,6 +2709,25 @@ async function spawnAgentCore(opts: AgentSpawnOptions, owner: Electron.WebConten
   if (provider === 'codex' && opts.hive?.id) {
     await enableCodexRemoteForSpawn(opts, opts.hive.id);
   }
+  // Phase 4: Load and inject ZAO discipline rules for ZAOOS agents.
+  // Rules are appended to the system prompt via --append-system-prompt for Claude agents.
+  if (claudeProvider && opts.hive) {
+    const rules = loadZaosRules(opts.cwd);
+    if (Object.keys(rules).length > 0) {
+      const args = opts.args ?? [];
+      // Build a system prompt addition from the loaded rules
+      const rulesList = Object.entries(rules)
+        .map(([filename, content]) => `\n## ${filename}\n${content}`)
+        .join('\n');
+      const rulesPrompt = `\n\n## ZAO Discipline Rules\n\nThis agent is running under the ZAO Floor in a ZAOOS project. Apply the following discipline rules:\n${rulesList}`;
+
+      // Only append if --append-system-prompt isn't already present
+      if (!args.includes('--append-system-prompt')) {
+        args.push('--append-system-prompt', rulesPrompt);
+        opts.args = args;
+      }
+    }
+  }
   const res = ptyManager.spawn(opts, owner);
   if (res.ok) analytics.track('agent_spawned', { provider });
   syncKeepAwake(); // arm the power-save blocker while ≥1 agent PTY is alive (#18)
@@ -2965,6 +2985,46 @@ ipcMain.handle('fs:statAbs', (_evt, p: unknown) => {
   return statAbs(p);
 });
 
+// ─── Phase 4: Rules loading for ZAOOS agents ────────────────────────────────
+/** Detect if a cwd is in the ZAOOS project and read its .claude/rules/*.md files.
+ *  Returns a map of filename → content, or empty if not ZAOOS or rules unavailable. */
+function loadZaosRules(cwd: string): Record<string, string> {
+  try {
+    // Check if cwd contains "ZAO OS V1" — the canonical ZAOOS project dir
+    if (!cwd.includes('ZAO OS V1')) return {};
+
+    // Look for .claude/rules in the project root
+    const rulesDir = join(cwd, '.claude', 'rules');
+    if (!existsSync(rulesDir)) return {};
+
+    const rules: Record<string, string> = {};
+    const files = readdirSync(rulesDir);
+
+    for (const file of files) {
+      if (!file.endsWith('.md')) continue;
+      try {
+        const filePath = join(rulesDir, file);
+        const stat = statSync(filePath);
+        if (!stat.isFile()) continue;
+        // Limit to 100KB per rule file to avoid bloating the UI
+        if (stat.size > 100_000) continue;
+
+        const content = readFileSync(filePath, 'utf-8');
+        rules[file] = content;
+      } catch { /* skip unreadable files */ }
+    }
+
+    return rules;
+  } catch {
+    return {};
+  }
+}
+
+ipcMain.handle('rules:load', (_evt, cwd: unknown) => {
+  if (typeof cwd !== 'string') return {};
+  return loadZaosRules(cwd);
+});
+
 // ─── IPC: git ───────────────────────────────────────────────────────────────
 ipcMain.handle('git:isRepo', (_evt, cwd: unknown) => {
   if (typeof cwd !== 'string') return false;
@@ -3089,6 +3149,25 @@ ipcMain.handle('hive:setArchived', (_evt, id: unknown, archived: unknown) => {
   return { ok: true };
 });
 
+// ─── IPC: Cowork board (Supabase ZAOcowork tasks, Phase 2) ─────────────────
+ipcMain.handle('cowork:getTasks', async () => {
+  try {
+    const { getCoworkTasks } = await import('./supabase');
+    return await getCoworkTasks();
+  } catch (e) {
+    console.error('Error fetching cowork tasks:', e);
+    return [];
+  }
+});
+ipcMain.handle('cowork:isConfigured', async () => {
+  try {
+    const { isSupabaseConfigured } = await import('./supabase');
+    return isSupabaseConfigured();
+  } catch {
+    return false;
+  }
+});
+
 // ─── IPC: semantic memory (MemPalace CLI) ───────────────────────────────────
 ipcMain.handle('hive:memoryStatus', () => { memory.resetBinCache(); return memory.status(); });
 ipcMain.handle('hive:searchMemory', (_evt, query: unknown, wing: unknown) => {
@@ -3148,6 +3227,32 @@ ipcMain.handle('kg:addFiles', async (evt) => {
     }
   });
   return { ok: true as const, results };
+});
+
+// ─── IPC: Fleet Mirror (real tmux lanes) ────────────────────────────────────
+// Phase 3: Get the state of real ZAO floor lanes (WORKING/WAITING/IDLE/DEAD),
+// sourced from tmux sessions + zao-cc-state.sh. Gracefully degrades if tmux
+// or zao-cc-state.sh is absent (shows DEAD lanes, no crash).
+ipcMain.handle('fleet:getState', async () => {
+  try {
+    return { ok: true as const, lanes: await getFleetState() };
+  } catch (e) {
+    console.error('[fleet] getState error:', e);
+    return { ok: false as const, error: e instanceof Error ? e.message : String(e) };
+  }
+});
+
+// Fetch the recent pane output for a given tmux lane (read-only terminal view).
+// Used when clicking a lane character to show its recent output.
+ipcMain.handle('fleet:getLaneOutput', async (_evt, laneName: unknown) => {
+  if (typeof laneName !== 'string') return { ok: false as const, error: 'invalid lane name' };
+  try {
+    const output = await getLanePaneOutput(laneName as any);
+    return { ok: true as const, output };
+  } catch (e) {
+    console.error(`[fleet] getLaneOutput(${laneName}) error:`, e);
+    return { ok: false as const, error: e instanceof Error ? e.message : String(e) };
+  }
 });
 
 // ─── IPC: composer attachments (images + arbitrary files, attached by PATH) ──

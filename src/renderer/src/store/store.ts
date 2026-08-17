@@ -92,6 +92,10 @@ export interface Agent {
    *  positional seed. useHive types it once after boot-grace then clears it.
    *  Ephemeral spawn state — not persisted. (ondev-b) */
   seedPrompt?: string;
+  /** ZAO Floor Phase 4: rules files loaded for ZAOOS agents. Keyed by filename
+   *  (e.g. "agent-loops.md") → content. Empty when agent is not ZAOOS or rules
+   *  could not be read. Read-only display in the UI. */
+  loadedRules?: Record<string, string>;
 }
 
 export interface FeedEntry {
@@ -123,8 +127,9 @@ export interface QueuedMessage {
 
 // 'files' retired in v0.3.4 (the per-agent IDE button superseded it) — a
 // persisted 'files' selection falls back to 'terminal' on load. 'git' added in
-// v0.3.4: at-a-glance branch/status/log without opening the IDE.
-export type SidebarTab = 'terminal' | 'messages' | 'traces' | 'git';
+// v0.3.4: at-a-glance branch/status/log without opening the IDE. 'rules' added
+// in Phase 4: read-only display of loaded ZAO discipline rules for ZAOOS agents.
+export type SidebarTab = 'terminal' | 'messages' | 'traces' | 'git' | 'rules';
 
 /** Lifecycle of the god agent ("Michael") bootstrap on launch.
  *  'booting' until his PTY is confirmed live, then 'ready' (or 'failed' if the
@@ -227,6 +232,14 @@ interface State {
    *  on switch). OfficeFloor depends on this and rebuilds the scene on change. */
   officeTheme: ThemeId;
   setOfficeTheme: (theme: ThemeId) => void;
+  /** Fleet Mirror: state of real ZAO tmux lanes (Phase 3). Each lane is WORKING/WAITING/IDLE/DEAD. */
+  fleetLanes: Array<{ name: string; status: 'WORKING' | 'WAITING' | 'IDLE' | 'DEAD' }>;
+  setFleetLanes: (lanes: Array<{ name: string; status: 'WORKING' | 'WAITING' | 'IDLE' | 'DEAD' }>) => void;
+  selectedLaneForOutput: string | null;
+  setSelectedLaneForOutput: (lane: string | null) => void;
+  /** Recent pane output for the currently selected lane (read-only view). */
+  selectedLanePaneOutput: string;
+  setSelectedLanePaneOutput: (output: string) => void;
   /** Mirror of config.webhookTriggers — the inbound HTTP endpoints. Webhooks are
    *  editable from BOTH Settings → Connections and the Triggers tab, so neither
    *  surface keeps its own copy: both render off this list and both call the
@@ -710,6 +723,12 @@ export const useStore = create<State>((set) => ({
   setHasOpenAiKey: (has) => set({ hasOpenAiKey: has }),
   officeTheme: 'office',
   setOfficeTheme: (theme) => set({ officeTheme: theme }),
+  fleetLanes: [],
+  setFleetLanes: (lanes) => set({ fleetLanes: lanes }),
+  selectedLaneForOutput: null,
+  setSelectedLaneForOutput: (lane) => set({ selectedLaneForOutput: lane }),
+  selectedLanePaneOutput: '',
+  setSelectedLanePaneOutput: (output) => set({ selectedLanePaneOutput: output }),
   webhookTriggers: [],
   setWebhookTriggers: (list) => set({ webhookTriggers: list }),
   // A copy, not the shared DEFAULT_ORG_TRIGGER instance — main takes the same
