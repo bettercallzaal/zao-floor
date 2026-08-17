@@ -4,11 +4,13 @@ import { Icon, type IconName } from './Icon';
 
 // v0.3.4: the files tab is gone — the per-agent IDE button (header) opens the
 // full Monaco editor + file tree, which superseded the read-only browser.
+// Phase 4: rules tab shows loaded ZAO discipline rules for ZAOOS agents.
 const TABS: { key: SidebarTab; label: string; icon: IconName }[] = [
   { key: 'terminal', label: 'terminal', icon: 'terminal' },
   { key: 'git',      label: 'git',      icon: 'code' },
   { key: 'messages', label: 'messages', icon: 'bell' },
-  { key: 'traces',   label: 'traces',   icon: 'web' }
+  { key: 'traces',   label: 'traces',   icon: 'web' },
+  { key: 'rules',    label: 'rules',    icon: 'book' }
 ];
 
 export interface SidebarTabsProps {

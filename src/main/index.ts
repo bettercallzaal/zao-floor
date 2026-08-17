@@ -2709,6 +2709,25 @@ async function spawnAgentCore(opts: AgentSpawnOptions, owner: Electron.WebConten
   if (provider === 'codex' && opts.hive?.id) {
     await enableCodexRemoteForSpawn(opts, opts.hive.id);
   }
+  // Phase 4: Load and inject ZAO discipline rules for ZAOOS agents.
+  // Rules are appended to the system prompt via --append-system-prompt for Claude agents.
+  if (claudeProvider && opts.hive) {
+    const rules = loadZaosRules(opts.cwd);
+    if (Object.keys(rules).length > 0) {
+      const args = opts.args ?? [];
+      // Build a system prompt addition from the loaded rules
+      const rulesList = Object.entries(rules)
+        .map(([filename, content]) => `\n## ${filename}\n${content}`)
+        .join('\n');
+      const rulesPrompt = `\n\n## ZAO Discipline Rules\n\nThis agent is running under the ZAO Floor in a ZAOOS project. Apply the following discipline rules:\n${rulesList}`;
+
+      // Only append if --append-system-prompt isn't already present
+      if (!args.includes('--append-system-prompt')) {
+        args.push('--append-system-prompt', rulesPrompt);
+        opts.args = args;
+      }
+    }
+  }
   const res = ptyManager.spawn(opts, owner);
   if (res.ok) analytics.track('agent_spawned', { provider });
   syncKeepAwake(); // arm the power-save blocker while ≥1 agent PTY is alive (#18)
@@ -2964,6 +2983,46 @@ ipcMain.handle('fs:statAbs', (_evt, p: unknown) => {
     return { exists: false, isFile: false, path: '' };
   }
   return statAbs(p);
+});
+
+// ─── Phase 4: Rules loading for ZAOOS agents ────────────────────────────────
+/** Detect if a cwd is in the ZAOOS project and read its .claude/rules/*.md files.
+ *  Returns a map of filename → content, or empty if not ZAOOS or rules unavailable. */
+function loadZaosRules(cwd: string): Record<string, string> {
+  try {
+    // Check if cwd contains "ZAO OS V1" — the canonical ZAOOS project dir
+    if (!cwd.includes('ZAO OS V1')) return {};
+
+    // Look for .claude/rules in the project root
+    const rulesDir = join(cwd, '.claude', 'rules');
+    if (!existsSync(rulesDir)) return {};
+
+    const rules: Record<string, string> = {};
+    const files = readdirSync(rulesDir);
+
+    for (const file of files) {
+      if (!file.endsWith('.md')) continue;
+      try {
+        const filePath = join(rulesDir, file);
+        const stat = statSync(filePath);
+        if (!stat.isFile()) continue;
+        // Limit to 100KB per rule file to avoid bloating the UI
+        if (stat.size > 100_000) continue;
+
+        const content = readFileSync(filePath, 'utf-8');
+        rules[file] = content;
+      } catch { /* skip unreadable files */ }
+    }
+
+    return rules;
+  } catch {
+    return {};
+  }
+}
+
+ipcMain.handle('rules:load', (_evt, cwd: unknown) => {
+  if (typeof cwd !== 'string') return {};
+  return loadZaosRules(cwd);
 });
 
 // ─── IPC: git ───────────────────────────────────────────────────────────────
